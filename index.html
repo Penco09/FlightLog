@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Log Database Sync</title>
+    
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --primary: #2b579a;
+            --border: #cccccc;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container { max-width: 700px; margin: 0 auto; }
+        h1 { color: var(--primary); text-align: center; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 25px; font-size: 14px; }
+        .card { background: var(--card-bg); padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        form { display: grid; gap: 15px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .modern-time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .modern-time-grid input { background-color: #ffffff; cursor: pointer; text-align: center; font-weight: bold; }
+        label { font-size: 12px; font-weight: bold; color: #555; display: block; margin-bottom: 4px; }
+        input, select, textarea, button { padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 15px; width: 100%; box-sizing: border-box; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; }
+        button { background-color: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; font-size: 16px; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Multi-User Flight Logbook</h1>
+    <div class="subtitle">Connected to Shared Google Sheet Cloud Database</div>
+    
+    <div class="card">
+        <form id="flightForm">
+            <div>
+                <label>Pilot in Command (PIC)</label>
+                <select id="pilotName" required>
+                    <option value="" disabled selected>Select Pilot...</option>
+                    <option value="Edouard Martin">Edouard Martin</option>
+                    <option value="Alexis Osipenco">Alexis Osipenco</option>
+                    <option value="Yves Todorov">Yves Todorov</option>
+                    <option value="Damien Van Oost">Damien Van Oost</option>
+                    <option value="Sean Daoust">Sean Daoust</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Flight Date</label>
+                <input type="date" id="flightDate" lang="en-GB" required>
+            </div>
+            
+            <div class="form-row">
+                <div>
+                    <label>Departure Airfield (ICAO)</label>
+                    <input type="text" id="depAirfield" placeholder="e.g., EBAW" maxlength="10" style="text-transform: uppercase;" required>
+                </div>
+                <div>
+                    <label>Arrival Airfield (ICAO)</label>
+                    <input type="text" id="arrAirfield" placeholder="e.g., EBBR" maxlength="10" style="text-transform: uppercase;" required>
+                </div>
+            </div>
+            
+            <div class="modern-time-grid">
+                <div>
+                    <label>Off Block (Start)</label>
+                    <input type="text" id="startTime" readonly placeholder="Tap to select" required>
+                </div>
+                <div>
+                    <label>Take-off Time (T/O)</label>
+                    <input type="text" id="takeOffTime" readonly placeholder="Tap to select" required>
+                </div>
+            </div>
+
+            <div class="modern-time-grid">
+                <div>
+                    <label>Landing Time (LDG)</label>
+                    <input type="text" id="landingTime" readonly placeholder="Tap to select" required>
+                </div>
+                <div>
+                    <label>On Blocks (Stop)</label>
+                    <input type="text" id="shutDownTime" readonly placeholder="Tap to select" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label>Number of Landings</label>
+                    <input type="number" min="0" id="landings" placeholder="e.g., 1" required>
+                </div>
+                <div>
+                    <label>Fuel Added</label>
+                    <input type="text" id="fuelAdded" placeholder="e.g., 45L">
+                </div>
+            </div>
+
+            <div>
+                <label>Oil Added</label>
+                <input type="text" id="oilAdded" placeholder="e.g., 1 Qrt">
+            </div>
+
+            <div>
+                <label>Remarks / Route Notes</label>
+                <textarea id="flightRemarks" rows="3" placeholder="Weather, maintenance discrepancies, or crew notes..."></textarea>
+            </div>
+
+            <button type="submit" id="submitBtn">Log Flight to Cloud</button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/rolldate-full@3.2.3/dist/rolldate.min.js"></script>
+
+<script>
+    // Set default date picker target to today automatically
+    document.getElementById('flightDate').value = new Date().toISOString().split('T')[0];
+
+    // Initialize custom English 3D wheel scrollers
+    const pickerLang = { title: 'Select Time', cancel: 'Cancel', confirm: 'Confirm', hour: ' Hrs', min: ' Min' };
+    new Rolldate({ el: '#startTime', format: 'hh:mm', minStep: 1, lang: { ...pickerLang, title: 'Select Off-Block Time' } });
+    new Rolldate({ el: '#takeOffTime', format: 'hh:mm', minStep: 1, lang: { ...pickerLang, title: 'Select Take-off Time' } });
+    new Rolldate({ el: '#landingTime', format: 'hh:mm', minStep: 1, lang: { ...pickerLang, title: 'Select Landing Time' } });
+    new Rolldate({ el: '#shutDownTime', format: 'hh:mm', minStep: 1, lang: { ...pickerLang, title: 'Select On-Block Time' } });
+
+    // Global Form Submission Interception and Transmission Network Routing
+    document.getElementById('flightForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // CRITICAL: Replace the URL inside the quotes below with your exact URL from Step 3!
+        const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbzVpEd0-BtE1PQjsoPi7VdW8_dr6DMLin-jWMLxH0p3GSYXzUQVfXMk_6eWfuqB5YAS/exec';
+        
+        // Reformat standard internal YYYY-MM-DD input date value to display standard DD/MM/YYYY inside spreadsheet cell
+        const rawDate = document.getElementById('flightDate').value;
+        const formattedDate = rawDate.split('-').reverse().join('/');
+        
+        // Collect and concatenate airfield paths into standard operational notation string routing entry
+        const dep = document.getElementById('depAirfield').value.toUpperCase();
+        const arr = document.getElementById('arrAirfield').value.toUpperCase();
+        const combinedRoute = `${dep} - ${arr}`;
+        
+        const newFlight = {
+            date: formattedDate,
+            pilot: document.getElementById('pilotName').value,
+            departure: document.getElementById('depAirfield').value.toUpperCase(), 
+            arrival: document.getElementById('arrAirfield').value.toUpperCase(),
+            start: document.getElementById('startTime').value,
+            takeoff: document.getElementById('takeOffTime').value,
+            landing: document.getElementById('landingTime').value,
+            shutdown: document.getElementById('shutDownTime').value,
+            landings: document.getElementById('landings').value,
+            fuel: document.getElementById('fuelAdded').value || '-',
+            oil: document.getElementById('oilAdded').value || '-',
+            remarks: document.getElementById('flightRemarks').value || '-'
+        };
+        
+        // Provide visual interface processing notification 
+        const btn = document.getElementById('submitBtn');
+        btn.textContent = 'Transmitting Data to Sheet...';
+        btn.disabled = true;
+
+        // Push data string payload across network to Google Script Engine
+        fetch(googleAppScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newFlight)
+        })
+        .then(() => {
+            alert('Flight log successfully saved to the cloud database!');
+            this.reset();
+            document.getElementById('flightDate').value = new Date().toISOString().split('T')[0];
+        })
+        .catch(err => {
+            alert('Cloud connection failure occurred: ' + err);
+        })
+        .finally(() => {
+            btn.textContent = 'Log Flight to Cloud';
+            btn.disabled = false;
+        });
+    });
+</script>
+
+</body>
+</html>
