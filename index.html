@@ -92,6 +92,17 @@
                     <input type="text" id="shutDownTime" readonly placeholder="Tap to select" required>
                 </div>
             </div>
+            
+            <div class="form-row">
+                <div>
+                    <label>Calculated Flight Time</label>
+                    <input type="text" id="calcFlightTime" readonly placeholder="Calculated automatically">
+                </div>
+            <div>
+                    <label>Calculated Block Time</label>
+                    <input type="text" id="calcBlockTime" readonly placeholder="Calculated automatically">
+                </div>
+            </div>
 
             <div class="form-row">
                 <div>
@@ -129,11 +140,69 @@
 
     // Initialize custom English 3D wheel scrollers
     const pickerLang = { title: 'Select Time', cancel: 'Cancel', confirm: 'Confirm', hour: ' Hrs', min: ' Min' };
-    new Rolldate({ el: '#startTime', format: 'hh:mm', minStep: 1, lang: { ...pickerLang, title: 'Select Off-Block Time' } });
-    new Rolldate({ el: '#takeOffTime', format: 'hh:mm', minStep: 1, lang: { ...pickerLang, title: 'Select Take-off Time' } });
-    new Rolldate({ el: '#landingTime', format: 'hh:mm', minStep: 1, lang: { ...pickerLang, title: 'Select Landing Time' } });
-    new Rolldate({ el: '#shutDownTime', format: 'hh:mm', minStep: 1, lang: { ...pickerLang, title: 'Select On-Block Time' } });
-    
+
+new Rolldate({ 
+    el: '#takeOffTime', 
+    format: 'hh:mm', 
+    lang: { ...pickerLang, title: 'Select Take-off Time' },
+    confirm: function(date) {
+        // When takeoff time changes, check if landing time is there and calculate
+        const land = document.getElementById('landingTime').value;
+        document.getElementById('calcFlightTime').value = calculateDuration(date, land);
+    }
+});
+
+new Rolldate({ 
+    el: '#landingTime', 
+    format: 'hh:mm', 
+    lang: { ...pickerLang, title: 'Select Landing Time' },
+    confirm: function(date) {
+        const takeoff = document.getElementById('takeOffTime').value;
+        document.getElementById('calcFlightTime').value = calculateDuration(takeoff, date);
+    }
+});
+
+new Rolldate({ 
+    el: '#startTime', 
+    format: 'hh:mm', 
+    lang: { ...pickerLang, title: 'Select Off-Block Time' },
+    confirm: function(date) {
+        const shutdown = document.getElementById('shutDownTime').value;
+        document.getElementById('calcBlockTime').value = calculateDuration(date, shutdown);
+    }
+});
+
+new Rolldate({ 
+    el: '#shutDownTime', 
+    format: 'hh:mm', 
+    lang: { ...pickerLang, title: 'Select On-Block Time' },
+    confirm: function(date) {
+        const start = document.getElementById('startTime').value;
+        document.getElementById('calcBlockTime').value = calculateDuration(start, date);
+    }
+});
+
+function calculateDuration(startTime, endTime) {
+    if (!startTime || !endTime) return "";
+
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+
+    let startTotal = (startH * 60) + startM;
+    let endTotal = (endH * 60) + endM;
+
+    // Handle flights that cross midnight (e.g., 23:30 to 00:45)
+    if (endTotal < startTotal) {
+        endTotal += 24 * 60;
+    }
+
+    const diffMinutes = endTotal - startTotal;
+    const hours = Math.floor(diffMinutes / 60);
+    const mins = diffMinutes % 60;
+
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+}
+
     // Dynamically generate Fuel options from 0 to 120 Liters
     const fuelSelect = document.getElementById('fuelAdded');
     for (let i = 0; i <= 120; i++) {
