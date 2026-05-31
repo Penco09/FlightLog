@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aircraft Maintenance Log</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .form-container {
+            max-width: 600px;
+            background: #fff;
+            margin: 0 auto;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        h2 {
+            margin-top: 0;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #475569;
+        }
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px; /* Prevents iOS auto-zoom on focus */
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        .form-row > div {
+            flex: 1;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        button {
+            width: 100%;
+            background-color: #10b981; /* Green accent to differentiate from blue flight log */
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #059669;
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Log Maintenance Item</h2>
+    <form id="maintForm">
+        
+        <div class="form-group">
+            <label for="maintDate">Date Performed</label>
+            <input type="date" id="maintDate" required>
+        </div>
+
+        <div class="form-group">
+            <label for="componentCategory">Component / System</label>
+            <select id="componentCategory" required>
+                <option value="" disabled selected>Select system...</option>
+                <option value="Airframe">Airframe</option>
+                <option value="Engine">Engine & Fuel System</option>
+                <option value="Propeller">Propeller</option>
+                <option value="Avionics">Avionics & Electrical</option>
+                <option value="Documentation">Documentation / Annual / ARC</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="currentHours">Airframe Hours</label>
+                <input type="number" id="currentHours" step="0.1" placeholder="e.g. 1024.5" required>
+            </div>
+            <div class="form-group">
+                <label for="nextDueHours">Next Due Hours</label>
+                <input type="number" id="nextDueHours" step="0.1" placeholder="Leave blank if N/A">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="nextDueDate">Next Due Date (Calendar Expiry)</label>
+            <input type="date" id="nextDueDate">
+        </div>
+
+        <div class="form-group">
+            <label for="jobDescription">Work Performed</label>
+            <textarea id="jobDescription" placeholder="Detail the specific tasks completed, part numbers replaced, torque specs, etc." required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="mechanicName">Performed / Signed By</label>
+            <input type="text" id="mechanicName" placeholder="Pilot or Mechanic Name" required>
+        </div>
+
+        <button type="submit">Submit to Maintenance Log</button>
+    </form>
+</div>
+
+<div class="maint-history-container" style="margin-top: 30px; overflow-x: auto;">
+    <h3>Recent Maintenance Log Entries</h3>
+    <table id="maintTable" style="width:100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="background-color: #f2f2f2; border-bottom: 2px solid #ddd;">
+                <th style="padding: 10px;">Date</th>
+                <th style="padding: 10px;">System</th>
+                <th style="padding: 10px;">Airframe Hours</th>
+                <th style="padding: 10px;">Next Due Hours</th>
+                <th style="padding: 10px;">Next Due Date</th>
+                <th style="padding: 10px;">Work Description</th>
+                <th style="padding: 10px;">Signed By</th>
+            </tr>
+        </thead>
+        <tbody id="maintTableBody">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    // Automatically default the input field to today's date
+    document.getElementById('maintDate').valueToDate = new Date();
+    document.getElementById('maintDate').value = new Date().toISOString().substring(0, 10);
+
+document.getElementById('maintForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const rawMaintDate = document.getElementById('maintDate').value;
+    const formattedMaintDate = rawMaintDate.split('-').reverse().join('/');
+    
+    const rawDueDate = document.getElementById('nextDueDate').value;
+    const formattedDueDate = rawDueDate ? rawDueDate.split('-').reverse().join('/') : '-';
+
+    const maintData = {
+        formType: "maintenance", // This is what the Google Script checks!
+        date: formattedMaintDate,
+        category: document.getElementById('componentCategory').value,
+        hours: document.getElementById('currentHours').value,
+        dueHours: document.getElementById('nextDueHours').value || '-',
+        dueDate: formattedDueDate,
+        description: document.getElementById('jobDescription').value,
+        signature: document.getElementById('mechanicName').value
+    };
+
+    // Replace this string with your exact live Google Web App URL
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbwo71N1TOewqrnFT496Opl7YvPa-HcIAR9kQFFqctf7VoU_pC_Nwcs6ZdjVjfYSjVA8/exec";
+
+    // Change button text to show loading progress
+    const submitBtn = e.target.querySelector('button');
+    submitBtn.innerText = "Sending to Hangar Log...";
+    submitBtn.disabled = true;
+
+    // Send the maintenance log package to the cloud router
+    fetch(webAppUrl, {
+        method: 'POST',
+        mode: 'no-cors', // Keeps it identical to your working flight log setup
+        cache: 'no-cache',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(maintData)
+    })
+    .then(() => {
+        alert("Maintenance entry successfully logged!");
+        document.getElementById('maintForm').reset();
+        // Reset the date back to today after clearing fields
+        document.getElementById('maintDate').value = new Date().toISOString().substring(0, 10);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Transmission failed. Check console logs.");
+    })
+    .finally(() => {
+        submitBtn.innerText = "Submit to Maintenance Log";
+        submitBtn.disabled = false;
+    });
+});
+
+// Run this automatically when the maintenance page loads
+window.addEventListener('DOMContentLoaded', () => {
+    fetchMaintenanceData();
+});
+
+function fetchMaintenanceData() {
+    // Uses the same webAppUrl you added for form submission
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbwo71N1TOewqrnFT496Opl7YvPa-HcIAR9kQFFqctf7VoU_pC_Nwcs6ZdjVjfYSjVA8/exec";
+    const tbody = document.getElementById('maintTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" style="padding: 10px; text-align:center;">Loading hangar logs...</td></tr>';
+
+    // Query the Google Script using a specific action parameter for maintenance
+    fetch(webAppUrl + "?action=readMaintenance")
+        .then(response => response.json())
+        .then(logs => {
+            tbody.innerHTML = ''; // Clear loading indicator
+            
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="padding: 10px; text-align:center;">No maintenance logs recorded yet.</td></tr>';
+                return;
+            }
+
+            // Loop through entries showing newest work first
+            logs.reverse().forEach(log => {
+                const row = document.createElement('tr');
+                row.style.borderBottom = "1px solid #eee";
+                row.innerHTML = `
+                    <td style="padding: 10px;">${log.date}</td>
+                    <td style="padding: 10px;"><span style="background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 14px; font-weight:500;">${log.category}</span></td>
+                    <td style="padding: 10px;">${log.hours} hrs</td>
+                    <td style="padding: 10px;">${log.dueHours !== '-' ? log.dueHours + ' hrs' : '-'}</td>
+                    <td style="padding: 10px;">${log.dueDate}</td>
+                    <td style="padding: 10px; font-size: 15px; max-width: 250px; white-space: pre-wrap;">${log.description}</td>
+                    <td style="padding: 10px; font-style: italic; color: #555;">${log.signature}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching data:", error);
+            tbody.innerHTML = '<tr><td colspan="7" style="padding: 10px; text-align:center; color: red;">Error loading history table.</td></tr>';
+        });
+}
+
+</script>
+
+</body>
+</html>

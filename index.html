@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aircraft Operations Portal</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #0f172a; /* Sleek dark aviation theme */
+            color: #f8fafc;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .portal-container {
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: #38bdf8; /* Sky blue accent */
+        }
+        p.subtitle {
+            color: #94a3b8;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+        .menu-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .portal-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            padding: 25px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .portal-card:hover {
+            transform: translateY(-2px);
+            background-color: #24344d;
+        }
+        .flight-btn:hover {
+            border-color: #3b82f6; /* Blue highlight */
+        }
+        .maint-btn:hover {
+            border-color: #10b981; /* Green highlight */
+        }
+        .card-text {
+            text-align: left;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .card-desc {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        .arrow-icon {
+            font-size: 24px;
+            color: #64748b;
+            transition: color 0.2s;
+        }
+        .portal-card:hover .arrow-icon {
+            color: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+
+<div class="portal-container">
+    <h1>Aircraft Operations</h1>
+    <p class="subtitle">Select an action to continue</p>
+
+    <div class="menu-grid">
+        <a href="flights.html" class="portal-card flight-btn">
+            <div class="card-text">
+                <div class="card-title" style="color: #60a5fa;">✈️ Flight Logbook</div>
+                <div class="card-desc">Record flight times, routes, fuel, and landings.</div>
+            </div>
+            <div class="arrow-icon">➔</div>
+        </a>
+
+        <a href="maintenance.html" class="portal-card maint-btn">
+            <div class="card-text">
+                <div class="card-title" style="color: #34d399;">🔧 Hangar Maintenance</div>
+                <div class="card-desc">Log inspections, component status, and updates.</div>
+            </div>
+            <div class="arrow-icon">➔</div>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>
